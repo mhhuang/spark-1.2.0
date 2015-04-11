@@ -29,6 +29,11 @@ import org.apache.hadoop.yarn.util.Records
 import org.apache.spark.{Logging, SparkConf}
 import org.apache.spark.deploy.SparkHadoopUtil
 
+// HERE
+import org.apache.hadoop.yarn.api.protocolrecords.ReservationSubmissionRequest
+import org.apache.hadoop.yarn.api.protocolrecords.ReservationSubmissionResponse
+import scala.collection.JavaConversions._
+
 /**
  * Version of [[org.apache.spark.deploy.yarn.ClientBase]] tailored to YARN's stable API.
  */
@@ -76,9 +81,46 @@ private[spark] class Client(
     // Verify whether the cluster has enough resources for our AM
     verifyClusterResources(newAppResponse)
 
+
     // Set up the appropriate contexts to launch our AM
     val containerContext = createContainerLaunchContext(newAppResponse)
+
     val appContext = createApplicationSubmissionContext(newApp, containerContext)
+
+    // Muhuan HERE
+    if (args.rsrvInUse == 1) {
+      val executorRequest = ReservationRequest.newInstance(
+        Resource.newInstance(args.executorMemory, args.executorCores),
+        args.numExecutors,
+        1,
+        args.rsrvDuration)
+      val amRequest = ReservationRequest.newInstance(
+        Resource.newInstance(args.amMemory, 1),
+        1,
+        1,
+        args.rsrvDuration)
+      val rsrvResources = new java.util.ArrayList[ReservationRequest]()
+      rsrvResources.add(executorRequest)
+      rsrvResources.add(amRequest)
+      val rsrvRequests = ReservationRequests.newInstance(
+        rsrvResources,
+        ReservationRequestInterpreter.R_ALL)
+      val rsrvDef = ReservationDefinition.newInstance(
+        args.rsrvStartTime,
+        args.rsrvDeadline, 
+        rsrvRequests,
+        "spark-reservation")
+      val rsrvSubmissionRequest = ReservationSubmissionRequest.newInstance(rsrvDef, args.rsrvQueue)
+      val rid = yarnClient.submitReservation(rsrvSubmissionRequest).getReservationId
+      appContext.setReservationID(rid)
+      appContext.setQueue(args.rsrvQueue)
+
+      // wait for the queue to be ready
+      while(yarnClient.getQueueInfo(rid.toString) == null) {
+        println("queue " + rid.toString + " not ready");
+        Thread.sleep(1000)
+      }
+    }
 
     // Finally, submit and monitor the application
     logInfo(s"Submitting application ${appId.getId} to ResourceManager")

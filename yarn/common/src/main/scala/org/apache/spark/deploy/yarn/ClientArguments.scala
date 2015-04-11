@@ -23,6 +23,9 @@ import org.apache.spark.SparkConf
 import org.apache.spark.deploy.yarn.YarnSparkHadoopUtil._
 import org.apache.spark.util.{Utils, IntParam, MemoryParam}
 
+//HERE
+import java.lang.Long
+
 // TODO: Add code and support for ensuring that yarn resource 'tasks' are location aware !
 private[spark] class ClientArguments(args: Array[String], sparkConf: SparkConf) {
   var addJars: String = null
@@ -38,6 +41,14 @@ private[spark] class ClientArguments(args: Array[String], sparkConf: SparkConf) 
   var amMemory: Int = 512 // MB
   var appName: String = "Spark"
   var priority = 0
+
+	// HERE
+  var rsrvInUse: Int = 0
+	var rsrvStartTime: Long = -1 
+	var rsrvDeadline: Long = -1
+  var rsrvQueue: String = "default" 
+  var rsrvDuration: Long = -1 
+  var numAccs: Int = 0
 
   // Additional memory to allocate to containers
   // For now, use driver's memory overhead as our AM container's memory overhead
@@ -166,6 +177,30 @@ private[spark] class ClientArguments(args: Array[String], sparkConf: SparkConf) 
           archives = value
           args = tail
 
+				case ("--rsrv-inuse") :: IntParam(value) :: tail =>
+					rsrvInUse = value
+					args = tail
+
+				case ("--rsrv-starttime") :: value :: tail =>
+					rsrvStartTime = value.toLong
+					args = tail
+
+				case ("--rsrv-deadline") :: value :: tail =>
+					rsrvDeadline = value.toLong
+					args = tail
+
+				case ("--rsrv-duration") :: value :: tail =>
+					rsrvDuration = value.toLong
+					args = tail
+
+				case ("--rsrv-queuename") :: value :: tail =>
+					rsrvQueue = value
+					args = tail
+
+        case ("--num-accs") :: IntParam(value) :: tail =>
+          numAccs = value
+          args = tail
+
         case Nil =>
 
         case _ =>
@@ -193,6 +228,10 @@ private[spark] class ClientArguments(args: Array[String], sparkConf: SparkConf) 
       "  --queue QUEUE              The hadoop queue to use for allocation requests (Default: 'default')\n" +
       "  --addJars jars             Comma separated list of local jars that want SparkContext.addJar to work with.\n" +
       "  --files files              Comma separated list of files to be distributed with the job.\n" +
-      "  --archives archives        Comma separated list of archives to be distributed with the job."
+      "  --rsrv--inuse              \n" +
+      "  --rsrv--starttime          \n" +
+      "  --rsrv--deadline           \n" +
+      "  --rsrv--duration           \n" +
+      "  --rsrv--queuename          \n"
   }
 }
