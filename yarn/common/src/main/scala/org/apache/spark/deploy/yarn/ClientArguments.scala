@@ -228,6 +228,7 @@ private[spark] class ClientArguments(args: Array[String], sparkConf: SparkConf) 
       "  --queue QUEUE              The hadoop queue to use for allocation requests (Default: 'default')\n" +
       "  --addJars jars             Comma separated list of local jars that want SparkContext.addJar to work with.\n" +
       "  --files files              Comma separated list of files to be distributed with the job.\n" +
+      "  --archives archives        Comma separated list of archives to be distributed with the job.\n" +
       "  --rsrv--inuse              \n" +
       "  --rsrv--starttime          \n" +
       "  --rsrv--deadline           \n" +
