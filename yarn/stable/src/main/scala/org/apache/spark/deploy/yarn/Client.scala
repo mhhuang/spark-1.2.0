@@ -89,19 +89,14 @@ private[spark] class Client(
 
     // Muhuan HERE
     if (args.rsrvInUse == 1) {
-      val executorRequest = ReservationRequest.newInstance(
-        Resource.newInstance(args.executorMemory, args.executorCores),
-        args.numExecutors,
-        1,
-        args.rsrvDuration)
-      val amRequest = ReservationRequest.newInstance(
-        Resource.newInstance(args.amMemory, 1),
+      val executorAndAMRequest = ReservationRequest.newInstance(
+        Resource.newInstance(args.executorMemory * args.numExecutors + args.amMemory, 
+          args.executorCores * args.numExecutors + 1),
         1,
         1,
         args.rsrvDuration)
       val rsrvResources = new java.util.ArrayList[ReservationRequest]()
-      rsrvResources.add(executorRequest)
-      rsrvResources.add(amRequest)
+      rsrvResources.add(executorAndAMRequest)
       val rsrvRequests = ReservationRequests.newInstance(
         rsrvResources,
         ReservationRequestInterpreter.R_ALL)
@@ -112,13 +107,32 @@ private[spark] class Client(
         "spark-reservation")
       val rsrvSubmissionRequest = ReservationSubmissionRequest.newInstance(rsrvDef, args.rsrvQueue)
       val rid = yarnClient.submitReservation(rsrvSubmissionRequest).getReservationId
+      if (rid == null) {
+        logInfo(s"Application ${appId.getId} reservation did not succeed")
+        System.exit(1)
+      }
       appContext.setReservationID(rid)
       appContext.setQueue(args.rsrvQueue)
 
-      // wait for the queue to be ready
-      while(yarnClient.getQueueInfo(rid.toString) == null) {
-        println("queue " + rid.toString + " not ready");
+      // wait til the starttime 
+      var currentTime: Long = System.currentTimeMillis
+      while(currentTime < args.rsrvStartTime) {
+        println("job is ahead the specified starttime");
         Thread.sleep(1000)
+        currentTime = System.currentTimeMillis
+      }
+
+      // wait til the queue has capacity
+      var ready = false
+      while(!ready) {
+        var queueInfo = yarnClient.getQueueInfo(rid.toString)
+        if (queueInfo != null) {
+          if (queueInfo.getCapacity() > 0.0f) ready = true
+        }
+        if (!ready) {
+          println("queue " + rid.toString + " not ready");
+          Thread.sleep(1000)
+        }
       }
     }
 

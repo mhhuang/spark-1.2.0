@@ -23,9 +23,6 @@ import org.apache.spark.SparkConf
 import org.apache.spark.deploy.yarn.YarnSparkHadoopUtil._
 import org.apache.spark.util.{Utils, IntParam, MemoryParam}
 
-//HERE
-import java.lang.Long
-
 // TODO: Add code and support for ensuring that yarn resource 'tasks' are location aware !
 private[spark] class ClientArguments(args: Array[String], sparkConf: SparkConf) {
   var addJars: String = null
