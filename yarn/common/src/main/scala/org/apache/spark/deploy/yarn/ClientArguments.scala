@@ -46,6 +46,8 @@ private[spark] class ClientArguments(args: Array[String], sparkConf: SparkConf) 
   var rsrvQueue: String = "default" 
   var rsrvDuration: Long = -1 
   var numAccs: Int = 0
+  var rsrvSpeedup: Float = 1
+  var rsrvAccPercentage: Float = 0 
 
   // Additional memory to allocate to containers
   // For now, use driver's memory overhead as our AM container's memory overhead
@@ -174,6 +176,7 @@ private[spark] class ClientArguments(args: Array[String], sparkConf: SparkConf) 
           archives = value
           args = tail
 
+        /** Amber code starts here */
 				case ("--rsrv-inuse") :: IntParam(value) :: tail =>
 					rsrvInUse = value
 					args = tail
@@ -197,6 +200,15 @@ private[spark] class ClientArguments(args: Array[String], sparkConf: SparkConf) 
         case ("--num-accs") :: IntParam(value) :: tail =>
           numAccs = value
           args = tail
+
+        case ("--rsrv-speedup") :: value :: tail =>
+          rsrvSpeedup = value.toFloat
+          args = tail
+
+        case ("--rsrv-acc-percentage") :: value :: tail =>
+          rsrvAccPercentage = value.toFloat
+          args = tail
+        /** Amber code ends here */
 
         case Nil =>
 
@@ -226,10 +238,13 @@ private[spark] class ClientArguments(args: Array[String], sparkConf: SparkConf) 
       "  --addJars jars             Comma separated list of local jars that want SparkContext.addJar to work with.\n" +
       "  --files files              Comma separated list of files to be distributed with the job.\n" +
       "  --archives archives        Comma separated list of archives to be distributed with the job.\n" +
-      "  --rsrv--inuse              \n" +
-      "  --rsrv--starttime          \n" +
-      "  --rsrv--deadline           \n" +
-      "  --rsrv--duration           \n" +
-      "  --rsrv--queuename          \n"
+      "  --num-acc                  \n" +
+      "  --rsrv-inuse               \n" +
+      "  --rsrv-starttime           \n" +
+      "  --rsrv-deadline            \n" +
+      "  --rsrv-duration            \n" +
+      "  --rsrv-queuename           \n" +
+      "  --rsrv-speedup             \n" +
+      "  --rsrv-acc-percentage      \n"
   }
 }

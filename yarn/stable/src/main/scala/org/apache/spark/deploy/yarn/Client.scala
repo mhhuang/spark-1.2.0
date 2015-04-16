@@ -91,10 +91,13 @@ private[spark] class Client(
     if (args.rsrvInUse == 1) {
       val executorAndAMRequest = ReservationRequest.newInstance(
         Resource.newInstance(args.executorMemory * args.numExecutors + args.amMemory, 
-          args.executorCores * args.numExecutors + 1),
+          args.executorCores * args.numExecutors + 1,
+          args.numAccs),
         1,
         1,
-        args.rsrvDuration)
+        args.rsrvDuration,
+        args.rsrvSpeedup,
+        args.rsrvAccPercentage)
       val rsrvResources = new java.util.ArrayList[ReservationRequest]()
       rsrvResources.add(executorAndAMRequest)
       val rsrvRequests = ReservationRequests.newInstance(
