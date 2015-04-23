@@ -81,20 +81,28 @@ private[spark] class Client(
     // Verify whether the cluster has enough resources for our AM
     verifyClusterResources(newAppResponse)
 
-
     // Set up the appropriate contexts to launch our AM
-    val containerContext = createContainerLaunchContext(newAppResponse)
+    var containerContext: ContainerLaunchContext = null
 
-    val appContext = createApplicationSubmissionContext(newApp, containerContext)
+    var appContext: ApplicationSubmissionContext = null
 
     // Muhuan HERE
     if (args.rsrvInUse == 1) {
+      // does not reserve amContainer
       val executorAndAMRequest = ReservationRequest.newInstance(
-        Resource.newInstance(args.executorMemory * args.numExecutors + args.amMemory, 
-          args.executorCores * args.numExecutors + 1,
-          args.numAccs),
-        1,
-        1,
+        //Resource.newInstance(args.executorMemory * args.numExecutors + args.amMemory, 
+        //  args.executorCores * args.numExecutors + 1,
+        //  args.numAccs),
+        //1,
+        //1,
+        //args.rsrvDuration,
+        //args.rsrvSpeedup,
+        //args.rsrvAccPercentage)
+        Resource.newInstance(args.executorMemory, 
+          args.executorCores,
+          0),
+        args.numExecutors,
+        args.numExecutors,
         args.rsrvDuration,
         args.rsrvSpeedup,
         args.rsrvAccPercentage)
@@ -108,14 +116,20 @@ private[spark] class Client(
         args.rsrvDeadline, 
         rsrvRequests,
         "spark-reservation")
-      val rsrvSubmissionRequest = ReservationSubmissionRequest.newInstance(rsrvDef, args.rsrvQueue)
-      val rid = yarnClient.submitReservation(rsrvSubmissionRequest).getReservationId
+      val rsrvSubmissionRequest = 
+        ReservationSubmissionRequest.newInstance(rsrvDef, args.rsrvQueue)
+      val rsrvSubmissionResponse= yarnClient.submitReservation(
+        rsrvSubmissionRequest)
+      val rid = rsrvSubmissionResponse.getReservationId
       if (rid == null) {
         logInfo(s"Application ${appId.getId} reservation did not succeed")
         System.exit(1)
       }
-      appContext.setReservationID(rid)
-      appContext.setQueue(args.rsrvQueue)
+      println("Reservation is successful.");
+
+      // set in the appContext
+      println("Allocate " + rsrvSubmissionResponse.getNumCpus() + " cpus, " +
+        rsrvSubmissionResponse.getNumAccs() + " accs.");
 
       // wait til the starttime 
       var currentTime: Long = System.currentTimeMillis
@@ -137,7 +151,21 @@ private[spark] class Client(
           Thread.sleep(1000)
         }
       }
+      args.numExecutors = rsrvSubmissionResponse.getNumCpus()
+      args.numAccs = rsrvSubmissionResponse.getNumAccs()
+      // Set up the appropriate contexts to launch our AM
+      containerContext = createContainerLaunchContext(newAppResponse)
+
+      appContext = createApplicationSubmissionContext(newApp, containerContext)
+      appContext.setReservationID(rid)
+      appContext.setQueue(args.rsrvQueue)
+    } else {
+      // Set up the appropriate contexts to launch our AM
+      containerContext = createContainerLaunchContext(newAppResponse)
+
+      appContext = createApplicationSubmissionContext(newApp, containerContext)
     }
+
 
     // Finally, submit and monitor the application
     logInfo(s"Submitting application ${appId.getId} to ResourceManager")

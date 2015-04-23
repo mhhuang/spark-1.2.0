@@ -389,7 +389,11 @@ private[spark] trait ClientBase extends Logging {
       Seq(
         "--executor-memory", args.executorMemory.toString + "m",
         "--executor-cores", args.executorCores.toString,
-        "--num-executors ", args.numExecutors.toString)
+        //"--num-executors ", args.numExecutors.toString)
+      /** Amber codes starts here */
+        "--num-executors ", args.numExecutors.toString,
+        "--num-accs ", args.numAccs.toString)
+      /** Amber codes ends here */
 
     // Command for the ApplicationMaster
     val commands = prefixEnv ++ Seq(Environment.JAVA_HOME.$() + "/bin/java", "-server") ++

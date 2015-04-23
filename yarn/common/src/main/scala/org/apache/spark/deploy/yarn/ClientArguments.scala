@@ -41,8 +41,8 @@ private[spark] class ClientArguments(args: Array[String], sparkConf: SparkConf) 
 
 	// HERE
   var rsrvInUse: Int = 0
-	var rsrvStartTime: Long = -1 
-	var rsrvDeadline: Long = -1
+ 	var rsrvStartTime: Long = -1 
+	 var rsrvDeadline: Long = -1
   var rsrvQueue: String = "default" 
   var rsrvDuration: Long = -1 
   var numAccs: Int = 0
@@ -238,13 +238,13 @@ private[spark] class ClientArguments(args: Array[String], sparkConf: SparkConf) 
       "  --addJars jars             Comma separated list of local jars that want SparkContext.addJar to work with.\n" +
       "  --files files              Comma separated list of files to be distributed with the job.\n" +
       "  --archives archives        Comma separated list of archives to be distributed with the job.\n" +
-      "  --num-acc                  \n" +
+      "  --num-acc                  Will be recalcuated is rsrv-inuse == 1\n" +
       "  --rsrv-inuse               \n" +
       "  --rsrv-starttime           \n" +
       "  --rsrv-deadline            \n" +
       "  --rsrv-duration            \n" +
       "  --rsrv-queuename           \n" +
       "  --rsrv-speedup             \n" +
-      "  --rsrv-acc-percentage      \n"
+      "  --rsrv-acc-percentage      Set this to 0 if do not want to use accelerators.\n"
   }
 }
